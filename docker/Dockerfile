@@ -4,13 +4,22 @@ LABEL maintainer="Guilherme Danielli <guilhermedanielli@hotmail.com>"
 
 
 # Versions
+# TO DO: turn this envs into build args
 ENV CONFLUENT_PLATFORM_VERSION="6.1"
 ENV CONFLUENT_PACKAGE="confluent-6.1.4"
 ENV S3_PLUGIN_VERSION="5.5.15"
+ENV JAVA_VERSION="1.8.0"
 
 # Set environment variables for Confluent
 ENV CONFLUENT_HOME="/opt/${CONFLUENT_PACKAGE}"
 ENV PATH="${PATH}:${CONFLUENT_HOME}/bin"
+
+# Set environment variables for Java
+ENV JAVA_HOME="/usr/lib/jvm/java-${JAVA_VERSION}-openjdk"
+ENV PATH="${PATH}:${JAVA_HOME}/bin"
+
+# JMX metrics port
+ENV JMX_PORT=9998
 
 # Worker Configuration Properties
 ENV CONNECT_BOOTSTRAP_SERVERS="kafka1:19092" \
@@ -36,7 +45,7 @@ RUN echo "Installing Java and tools"\
     epel-release \
     && yum -y update && yum install -y\
     curl \
-    java-1.8.0-openjdk \
+    "java-${JAVA_VERSION}-openjdk-devel" \
     jq \
     net-tools \
     && echo "Installing ${CONFLUENT_PACKAGE}" \
@@ -49,7 +58,7 @@ RUN echo "Installing Java and tools"\
     && yum clean all \
     && rm -rf /tmp/*
 
-COPY /scipts/* /usr/local/bin/
+COPY /scripts/* /usr/local/bin/
 
 RUN chmod +x /usr/local/bin/entrypoint.sh \
     && chmod +x /usr/local/bin/connect_env_to_props.sh \
@@ -57,6 +66,6 @@ RUN chmod +x /usr/local/bin/entrypoint.sh \
 
 WORKDIR $CONFLUENT_HOME
 
-EXPOSE 8083
+EXPOSE 8083 9998
 
 ENTRYPOINT [ "entrypoint.sh" ]
