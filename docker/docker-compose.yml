@@ -62,11 +62,30 @@ services:
     command:
       - --config.file=/etc/prometheus/prometheus.yml
 
+  # node-exporter:
+  #   image: prom/node-exporter:v0.18.1
+  #   container_name: node-exporter
+  #   ports:
+  #     - "9100:9100"
+  #   volumes:
+  #     - /proc:/host/proc:ro
+  #     - /sys:/host/sys:ro
+  #     - /:/rootfs:ro
+  #   command:
+  #     - "--path.procfs=/host/proc"
+  #     - "--path.sysfs=/host/sys"
+  #     - "--collector.filesystem.ignored-mount-points"
+  #     - "^(aufs|proc|nsfs|shm|cgroup|tmpfs|binfmt_misc|debugfs|devpts|fusectl|hugetlbfs|fuse.lxcfs|mqueue|pstore|securityfs|sysfs|autofs|devtmpfs|configfs)"
+  #   depends_on:
+  #     - prometheus
+
   grafana:
     image: grafana/grafana
     container_name: grafana
     ports:
       - "3000:3000"
+    volumes:
+      - ../grafana/provisioning/:/etc/grafana/provisioning
     environment:
       - "GF_INSTALL_PLUGINS=grafana-piechart-panel"
       - "GF_SECURITY_ADMIN_USER=admin"

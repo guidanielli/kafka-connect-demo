@@ -7,9 +7,13 @@ scrape_configs:
     static_configs:
       - targets: ['localhost:9090']
 
-  - job_name: 'kafka-connect'
+  - job_name: 'connect'
     static_configs:
       - targets: ['kafka-connect:9998']
         labels:
           env: "dev"
           cluster: "cluster1"
+  
+  - job_name: "node-exporter"
+    static_configs:
+      - targets: ["node-exporter:9100"]
