@@ -18,16 +18,14 @@ ENV PATH="${PATH}:${CONFLUENT_HOME}/bin"
 ENV JAVA_HOME="/usr/lib/jvm/java-${JAVA_VERSION}-openjdk"
 ENV PATH="${PATH}:${JAVA_HOME}/bin"
 
-# JMX metrics port
-ENV JMX_PORT=9998
+# Set environment variables for JMX Prometheus Exporter
+ENV PROMETHEUS_PATH="/opt/prometheus-jmx-exporter/"
+ENV KAFKA_OPTS="-javaagent:/opt/prometheus-jmx-exporter/jmx_prometheus_javaagent-0.19.0.jar=9998:/opt/prometheus-jmx-exporter/kafka-connect.yml"
 
 # Worker Configuration Properties
 ENV CONNECT_BOOTSTRAP_SERVERS="kafka1:19092" \
     CONNECT_REST_PORT="8083" \
     CONNECT_GROUP_ID="connect-cluster" \
-    CONNECT_CONFIG_STORAGE_TOPIC="${CONNECT_GROUP_ID}-config" \
-    CONNECT_OFFSET_STORAGE_TOPIC="${CONNECT_GROUP_ID}-offsets" \
-    CONNECT_STATUS_STORAGE_TOPIC="${CONNECT_GROUP_ID}-status" \
     CONNECT_KEY_CONVERTER="io.confluent.connect.avro.AvroConverter" \
     CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL='http://kafka-schema-registry:8081' \
     CONNECT_VALUE_CONVERTER="io.confluent.connect.avro.AvroConverter" \
@@ -38,6 +36,10 @@ ENV CONNECT_BOOTSTRAP_SERVERS="kafka1:19092" \
     CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR="1" \
     CONNECT_STATUS_STORAGE_REPLICATION_FACTOR="1" \
     CONNECT_PLUGIN_PATH="${CONFLUENT_HOME}/share/confluent-hub-components/"
+
+ENV CONNECT_CONFIG_STORAGE_TOPIC="${CONNECT_GROUP_ID}-config" \
+    CONNECT_OFFSET_STORAGE_TOPIC="${CONNECT_GROUP_ID}-offsets" \
+    CONNECT_STATUS_STORAGE_TOPIC="${CONNECT_GROUP_ID}-status" 
 
 # Install Java, Confluent Platform and S3 Sink Connector Plug-in
 RUN echo "Installing Java and tools"\
@@ -58,11 +60,18 @@ RUN echo "Installing Java and tools"\
     && yum clean all \
     && rm -rf /tmp/*
 
-COPY /scripts/* /usr/local/bin/
+COPY scripts/* /usr/local/bin/
 
-RUN chmod +x /usr/local/bin/entrypoint.sh \
+RUN echo "Giving permission to sh files"\
+    && chmod +x /usr/local/bin/entrypoint.sh \
     && chmod +x /usr/local/bin/connect_env_to_props.sh \
-    && mkdir -p $CONFLUENT_HOME/etc/kafka-connect/
+    && echo "Creating dir to .properties file" \
+    && mkdir -p $CONFLUENT_HOME/etc/kafka-connect/ \
+    && echo "Creating dir to prometheus files" \
+    && mkdir -p "${PROMETHEUS_PATH}"
+
+COPY jmx-exporter/* "${PROMETHEUS_PATH}"
+COPY prometheus-config/* "${PROMETHEUS_PATH}"
 
 WORKDIR $CONFLUENT_HOME
 
