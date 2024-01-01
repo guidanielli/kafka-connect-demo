@@ -1,30 +1,36 @@
-version: '2.1'
+version: '3'
+
+networks:
+  kafka-connect-net:
+    driver: bridge
 
 services:
-  zoo1:
+  zookeeper:
     image: confluentinc/cp-zookeeper:6.1.4
-    hostname: zoo1
-    container_name: zoo1
+    hostname: zookeeper
+    container_name: zookeeper
     ports:
       - "2181:2181"
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_SERVER_ID: 1
-      ZOOKEEPER_SERVERS: zoo1:2888:3888
+      ZOOKEEPER_SERVERS: zookeeper:2888:3888
+    networks:
+      - kafka-connect-net
 
-  kafka1:
+  kafka:
     image: confluentinc/cp-kafka:6.1.4
-    hostname: kafka1
-    container_name: kafka1
+    hostname: kafka
+    container_name: kafka
     ports:
       - "9092:9092"
       - "29092:29092"
       - "9999:9999"
     environment:
-      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka1:19092,EXTERNAL://${DOCKER_HOST_IP:-127.0.0.1}:9092,DOCKER://host.docker.internal:29092
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:19092,EXTERNAL://${DOCKER_HOST_IP:-127.0.0.1}:9092,DOCKER://host.docker.internal:29092
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,DOCKER:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
-      KAFKA_ZOOKEEPER_CONNECT: "zoo1:2181"
+      KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
       KAFKA_BROKER_ID: 1
       KAFKA_LOG4J_LOGGERS: "kafka.controller=INFO,kafka.producer.async.DefaultEventHandler=INFO,state.change.logger=INFO"
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
@@ -35,7 +41,9 @@ services:
       KAFKA_AUTHORIZER_CLASS_NAME: kafka.security.authorizer.AclAuthorizer
       KAFKA_ALLOW_EVERYONE_IF_NO_ACL_FOUND: "true"
     depends_on:
-      - zoo1
+      - zookeeper
+    networks:
+      - kafka-connect-net
 
   kafka-schema-registry:
     image: confluentinc/cp-schema-registry:6.1.4
@@ -44,12 +52,32 @@ services:
     ports:
       - "8081:8081"
     environment:
-      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: PLAINTEXT://kafka1:19092
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: PLAINTEXT://kafka:19092
       SCHEMA_REGISTRY_HOST_NAME: kafka-schema-registry
       SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
     depends_on:
-      - zoo1
-      - kafka1
+      - zookeeper
+      - kafka
+    networks:
+      - kafka-connect-net
+
+  kafka-connect:
+    build:
+      context: ../
+      dockerfile: docker/Dockerfile
+    hostname: kafka-connect
+    container_name: kafka-connect
+    ports:
+      - "8083:8083"
+      - "9998:9998"
+    environment:
+      CONNECT_PLUGIN_PATH: /opt/confluent/share/filestream-connectors/
+    depends_on:
+      - zookeeper
+      - kafka
+      - kafka-schema-registry
+    networks:
+      - kafka-connect-net
 
   prometheus:
     image: prom/prometheus
@@ -58,11 +86,31 @@ services:
     ports:
       - "9090:9090"
     volumes:
-      - ../prometheus-config:/etc/prometheus
+      - ../monitoring/prometheus-config:/etc/prometheus
     command:
       - --config.file=/etc/prometheus/prometheus.yml
+    networks:
+      - kafka-connect-net
 
-  # node-exporter:
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - ../monitoring/grafana/provisioning/:/etc/grafana/provisioning
+    environment:
+      - "GF_INSTALL_PLUGINS=grafana-piechart-panel"
+      - "GF_SECURITY_ADMIN_USER=admin"
+      - "GF_SECURITY_ADMIN_PASSWORD=admin"
+      - "GF_USERS_ALLOW_SIGN_UP=false"
+    depends_on:
+      - prometheus
+    networks:
+      - kafka-connect-net
+
+
+ # node-exporter:
   #   image: prom/node-exporter:v0.18.1
   #   container_name: node-exporter
   #   ports:
@@ -78,18 +126,3 @@ services:
   #     - "^(aufs|proc|nsfs|shm|cgroup|tmpfs|binfmt_misc|debugfs|devpts|fusectl|hugetlbfs|fuse.lxcfs|mqueue|pstore|securityfs|sysfs|autofs|devtmpfs|configfs)"
   #   depends_on:
   #     - prometheus
-
-  grafana:
-    image: grafana/grafana
-    container_name: grafana
-    ports:
-      - "3000:3000"
-    volumes:
-      - ../grafana/provisioning/:/etc/grafana/provisioning
-    environment:
-      - "GF_INSTALL_PLUGINS=grafana-piechart-panel"
-      - "GF_SECURITY_ADMIN_USER=admin"
-      - "GF_SECURITY_ADMIN_PASSWORD=admin"
-      - "GF_USERS_ALLOW_SIGN_UP=false"
-    depends_on:
-      - prometheus

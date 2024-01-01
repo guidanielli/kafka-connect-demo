@@ -11,7 +11,7 @@ ENV S3_PLUGIN_VERSION="5.5.15"
 ENV JAVA_VERSION="1.8.0"
 
 # Set environment variables for Confluent
-ENV CONFLUENT_HOME="/opt/${CONFLUENT_PACKAGE}"
+ENV CONFLUENT_HOME="/opt/confluent"
 ENV PATH="${PATH}:${CONFLUENT_HOME}/bin"
 
 # Set environment variables for Java
@@ -37,6 +37,7 @@ ENV CONNECT_BOOTSTRAP_SERVERS="kafka1:19092" \
     CONNECT_STATUS_STORAGE_REPLICATION_FACTOR="1" \
     CONNECT_PLUGIN_PATH="${CONFLUENT_HOME}/share/confluent-hub-components/"
 
+# Set kafka connect internal topics
 ENV CONNECT_CONFIG_STORAGE_TOPIC="${CONNECT_GROUP_ID}-config" \
     CONNECT_OFFSET_STORAGE_TOPIC="${CONNECT_GROUP_ID}-offsets" \
     CONNECT_STATUS_STORAGE_TOPIC="${CONNECT_GROUP_ID}-status" 
@@ -54,6 +55,7 @@ RUN echo "Installing Java and tools"\
     && cd /tmp/ \
     && curl -O "https://packages.confluent.io/archive/${CONFLUENT_PLATFORM_VERSION}/${CONFLUENT_PACKAGE}.tar.gz" \
     && tar -xzf  "${CONFLUENT_PACKAGE}.tar.gz" --directory /opt/ \
+    && ln -s "/opt/${CONFLUENT_PACKAGE}/" /opt/confluent \
     && echo "Installing S3 Sink plug-in version ${S3_PLUGIN_VERSION}" \
     && confluent-hub install --no-prompt "confluentinc/kafka-connect-s3:${S3_PLUGIN_VERSION}"\
     && echo "Cleaning up..." \
@@ -70,10 +72,9 @@ RUN echo "Giving permission to sh files"\
     && echo "Creating dir to prometheus files" \
     && mkdir -p "${PROMETHEUS_PATH}"
 
-COPY jmx-exporter/* "${PROMETHEUS_PATH}"
 COPY prometheus-config/* "${PROMETHEUS_PATH}"
 
-WORKDIR $CONFLUENT_HOME
+WORKDIR /opt/confluent
 
 EXPOSE 8083 9998
 
