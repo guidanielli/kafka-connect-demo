@@ -4,11 +4,10 @@ LABEL maintainer="Guilherme Danielli <guilhermedanielli@hotmail.com>"
 
 
 # Versions
-# TO DO: turn this envs into build args
-ENV CONFLUENT_PLATFORM_VERSION="6.1"
-ENV CONFLUENT_PACKAGE="confluent-6.1.4"
-ENV S3_PLUGIN_VERSION="5.5.15"
-ENV JAVA_VERSION="1.8.0"
+ARG CONFLUENT_PLATFORM_VERSION="6.1"
+ARG CONFLUENT_PACKAGE="confluent-6.1.4"
+ARG S3_PLUGIN_VERSION="5.5.15"
+ARG JAVA_VERSION="1.8.0"
 
 # Set environment variables for Confluent
 ENV CONFLUENT_HOME="/opt/confluent"

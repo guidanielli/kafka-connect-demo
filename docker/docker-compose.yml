@@ -67,6 +67,9 @@ services:
     build:
       context: ../
       dockerfile: docker/Dockerfile
+      args:
+        CONFLUENT_PLATFORM_VERSION: 7.5
+        CONFLUENT_PACKAGE: confluent-7.5.0
     hostname: kafka-connect
     container_name: kafka-connect
     ports:
