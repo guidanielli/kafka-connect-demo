@@ -23,7 +23,7 @@ ENV PROMETHEUS_PATH="/opt/prometheus-jmx-exporter/"
 ENV KAFKA_OPTS="-javaagent:/opt/prometheus-jmx-exporter/jmx_prometheus_javaagent-0.19.0.jar=9998:/opt/prometheus-jmx-exporter/kafka-connect.yml"
 
 # Worker Configuration Properties
-ENV CONNECT_BOOTSTRAP_SERVERS="kafka1:19092" \
+ENV CONNECT_BOOTSTRAP_SERVERS="kafka:19092" \
     CONNECT_REST_PORT="8083" \
     CONNECT_GROUP_ID="connect-cluster" \
     CONNECT_KEY_CONVERTER="io.confluent.connect.avro.AvroConverter" \
@@ -72,7 +72,7 @@ RUN echo "Giving permission to sh files"\
     && echo "Creating dir to prometheus files" \
     && mkdir -p "${PROMETHEUS_PATH}"
 
-COPY prometheus-config/* "${PROMETHEUS_PATH}"
+COPY monitoring/prometheus/* "${PROMETHEUS_PATH}"
 
 WORKDIR /opt/confluent
 

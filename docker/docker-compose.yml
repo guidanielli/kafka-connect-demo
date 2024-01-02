@@ -26,6 +26,8 @@ services:
       - "9092:9092"
       - "29092:29092"
       - "9999:9999"
+    volumes:
+      - ../examples/:/etc/examples
     environment:
       KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:19092,EXTERNAL://${DOCKER_HOST_IP:-127.0.0.1}:9092,DOCKER://host.docker.internal:29092
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,DOCKER:PLAINTEXT
@@ -70,8 +72,11 @@ services:
     ports:
       - "8083:8083"
       - "9998:9998"
+    volumes:
+      - ../examples/:/etc/examples
     environment:
-      CONNECT_PLUGIN_PATH: /opt/confluent/share/filestream-connectors/
+      CONNECT_PLUGIN_PATH: /opt/confluent/share/filestream-connectors/,/opt/confluent/share/confluent-hub-components/
+      KAFKA_OPTS: -javaagent:/opt/prometheus-jmx-exporter/jmx_prometheus_javaagent-0.19.0.jar=9998:/opt/prometheus-jmx-exporter/kafka-connect.yml
     depends_on:
       - zookeeper
       - kafka
@@ -81,12 +86,12 @@ services:
 
   prometheus:
     image: prom/prometheus
-    container_name: prometheus1
-    hostname: prometheus1
+    container_name: prometheus
+    hostname: prometheus
     ports:
       - "9090:9090"
     volumes:
-      - ../monitoring/prometheus-config:/etc/prometheus
+      - ../monitoring/prometheus:/etc/prometheus
     command:
       - --config.file=/etc/prometheus/prometheus.yml
     networks:
@@ -100,9 +105,8 @@ services:
     volumes:
       - ../monitoring/grafana/provisioning/:/etc/grafana/provisioning
     environment:
-      - "GF_INSTALL_PLUGINS=grafana-piechart-panel"
       - "GF_SECURITY_ADMIN_USER=admin"
-      - "GF_SECURITY_ADMIN_PASSWORD=admin"
+      - "GF_SECURITY_ADMIN_PASSWORD=password"
       - "GF_USERS_ALLOW_SIGN_UP=false"
     depends_on:
       - prometheus

@@ -1,8 +1,10 @@
 {
-    "name": "teste-replication-file-sink", 
-    "connector.class": "org.apache.kafka.connect.file.FileStreamSinkConnector",
-    "tasks.max": "1", 
-    "topics": "teste-replication", 
-    "file": "/tmp/teste-replication-sink.out", 
-    "value.converter": "org.apache.kafka.connect.storage.StringConverter" 
+    "name": "test-replication-file-sink", 
+    "config": {
+        "connector.class": "org.apache.kafka.connect.file.FileStreamSinkConnector",
+        "tasks.max": "1", 
+        "topics": "test-replication", 
+        "file": "/tmp/test-replication-sink.out", 
+        "value.converter": "org.apache.kafka.connect.storage.StringConverter"
+    }
 }
