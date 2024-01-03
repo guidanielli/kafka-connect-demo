@@ -4,14 +4,14 @@ LABEL maintainer="Guilherme Danielli <guilhermedanielli@hotmail.com>"
 
 
 # Versions
-ARG CONFLUENT_PLATFORM_VERSION="6.1"
-ARG CONFLUENT_PACKAGE="confluent-6.1.4"
+ARG CONFLUENT_PLATFORM_VERSION="6.1.4"
 ARG S3_PLUGIN_VERSION="5.5.15"
 ARG JAVA_VERSION="1.8.0"
 
 # Set environment variables for Confluent
 ENV CONFLUENT_HOME="/opt/confluent"
 ENV PATH="${PATH}:${CONFLUENT_HOME}/bin"
+ENV CONFLUENT_PACKAGE="confluent-${CONFLUENT_PLATFORM_VERSION}"
 
 # Set environment variables for Java
 ENV JAVA_HOME="/usr/lib/jvm/java-${JAVA_VERSION}-openjdk"
@@ -42,14 +42,14 @@ ENV CONNECT_CONFIG_STORAGE_TOPIC="${CONNECT_GROUP_ID}-config" \
     CONNECT_STATUS_STORAGE_TOPIC="${CONNECT_GROUP_ID}-status" 
 
 # Install Java, Confluent Platform and S3 Sink Connector Plug-in
-RUN echo "Installing Java and tools"\
+RUN echo -e "Installing Java ${JAVA_VERSION} and tools"\
     && yum -y update && yum install -y\
     curl \
     "java-${JAVA_VERSION}-openjdk-devel" \
     net-tools \
     && echo "Installing ${CONFLUENT_PACKAGE}" \
     && cd /tmp/ \
-    && curl -O "https://packages.confluent.io/archive/${CONFLUENT_PLATFORM_VERSION}/${CONFLUENT_PACKAGE}.tar.gz" \
+    && curl -O "https://packages.confluent.io/archive/$(echo $CONFLUENT_PLATFORM_VERSION | cut -d'.' -f1,2)/${CONFLUENT_PACKAGE}.tar.gz" \
     && tar -xzf  "${CONFLUENT_PACKAGE}.tar.gz" --directory /opt/ \
     && ln -s "/opt/${CONFLUENT_PACKAGE}/" /opt/confluent \
     && echo "Installing S3 Sink plug-in version ${S3_PLUGIN_VERSION}" \

@@ -68,8 +68,8 @@ services:
       context: ../
       dockerfile: docker/Dockerfile
       args:
-        CONFLUENT_PLATFORM_VERSION: 7.5
-        CONFLUENT_PACKAGE: confluent-7.5.0
+        CONFLUENT_PLATFORM_VERSION: 7.5.0
+        S3_PLUGIN_VERSION: 10.5.7
     hostname: kafka-connect
     container_name: kafka-connect
     ports:
