@@ -44,11 +44,8 @@ ENV CONNECT_CONFIG_STORAGE_TOPIC="${CONNECT_GROUP_ID}-config" \
 # Install Java, Confluent Platform and S3 Sink Connector Plug-in
 RUN echo "Installing Java and tools"\
     && yum -y update && yum install -y\
-    epel-release \
-    && yum -y update && yum install -y\
     curl \
     "java-${JAVA_VERSION}-openjdk-devel" \
-    jq \
     net-tools \
     && echo "Installing ${CONFLUENT_PACKAGE}" \
     && cd /tmp/ \
